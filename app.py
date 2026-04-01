@@ -9,16 +9,14 @@ from streamlit_autorefresh import st_autorefresh
 # --- 1. ตั้งค่าหน้าเว็บ ---
 st.set_page_config(page_title="SUT Waste Tracker", page_icon="🚛", layout="wide")
 
-# --- 2. เชื่อมต่อ Firebase (ดึงข้อมูลจากตู้เซฟ Secrets) ---
+# --- 2. เชื่อมต่อ Firebase ผ่าน Secrets ---
 if not firebase_admin._apps:
     try:
-        # ดึงข้อมูลจาก Streamlit Secrets
-        firebase_secrets = dict(st.secrets["firebase"])
+        # ดึงข้อมูลจากตู้เซฟ Secrets ที่คุณตั้งไว้
+        fb_creds = dict(st.secrets["firebase"])
+        fb_creds["private_key"] = fb_creds["private_key"].replace("\\n", "\n")
         
-        # แก้ไขปัญหาเรื่องตัวอักษรขึ้นบรรทัดใหม่ (\n)
-        firebase_secrets["private_key"] = firebase_secrets["private_key"].replace("\\n", "\n")
-        
-        cred = credentials.Certificate(firebase_secrets)
+        cred = credentials.Certificate(fb_creds)
         db_url = "https://sut-waste-tracker-default-rtdb.asia-southeast1.firebasedatabase.app/"
         firebase_admin.initialize_app(cred, {'databaseURL': db_url})
     except Exception as e:
@@ -27,17 +25,26 @@ if not firebase_admin._apps:
 # --- 3. ฟังก์ชันจัดการข้อมูล ---
 def update_location(truck_id, lat, lon):
     try:
-        ref = db.reference(f'trucks/{truck_id}/current')
-        ref.set({'lat': lat, 'lon': lon, 'timestamp': time.strftime("%H:%M:%S")})
-        db.reference(f'trucks/{truck_id}/path').push({'lat': lat, 'lon': lon, 'time': time.time()})
+        ref_current = db.reference(f'trucks/{truck_id}/current')
+        ref_current.set({
+            'lat': lat, 'lon': lon, 
+            'timestamp': time.strftime("%H:%M:%S")
+        })
+        # เก็บประวัติเส้นทาง
+        db.reference(f'trucks/{truck_id}/path').push({
+            'lat': lat, 'lon': lon, 'time': time.time()
+        })
         return True
-    except: return False
+    except:
+        return False
 
 def get_all_trucks():
-    try: return db.reference('trucks').get()
-    except: return None
+    try:
+        return db.reference('trucks').get()
+    except:
+        return None
 
-# --- 4. ระบบ UI ---
+# --- 4. ส่วนของ UI และ Logic ---
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
 
@@ -50,29 +57,66 @@ if not st.session_state.logged_in:
             st.session_state.logged_in = True
             st.session_state.role = role
             st.rerun()
-        else: st.error("รหัสผ่านผิด")
+        else:
+            st.error("รหัสผ่านไม่ถูกต้อง")
 else:
+    # รีเฟรชหน้าจอทุก 5 วินาทีอัตโนมัติ
     st_autorefresh(interval=5000, key="datarefresh")
+    
+    st.sidebar.title(f"สถานะ: {st.session_state.role}")
     if st.sidebar.button("ออกจากระบบ"):
         st.session_state.logged_in = False
         st.rerun()
 
+    # --- หน้าคนขับรถ ---
     if st.session_state.role == "Driver (คนขับรถ)":
-        st.title("🚛 สำหรับคนขับ")
-        truck = st.selectbox("เลือกรถ", ["Truck_01", "Truck_02", "Truck_03"])
+        st.title("🚛 ระบบส่งตำแหน่งรถขยะ")
+        truck_id = st.selectbox("เลือกหมายเลขรถ", ["Truck_01", "Truck_02", "Truck_03"])
+        
+        st.subheader("พิกัดปัจจุบัน")
         col1, col2 = st.columns(2)
-        lat = col1.number_input("Lat", value=14.882, format="%.6f")
-        lon = col2.number_input("Lon", value=102.021, format="%.6f")
-        if st.button("📍 ส่งตำแหน่ง"):
-            if update_location(truck, lat, lon): st.success("บันทึกแล้ว!")
-            else: st.error("ส่งไม่สำเร็จ")
+        lat = col1.number_input("Latitude", value=14.882000, format="%.6f")
+        lon = col2.number_input("Longitude", value=102.021000, format="%.6f")
+        
+        # สวิตช์เปิด-ปิดการส่งข้อมูลอัตโนมัติ
+        auto_update = st.toggle("เปิดระบบอัปเดตตำแหน่งอัตโนมัติ (ทุก 5 วินาที)")
+        
+        if auto_update or st.button("📍 ส่งตำแหน่งด้วยตัวเอง"):
+            if update_location(truck_id, lat, lon):
+                st.success(f"✅ อัปเดตพิกัด {truck_id} สำเร็จ! ({time.strftime('%H:%M:%S')})")
+            else:
+                st.error("❌ ส่งข้อมูลไม่สำเร็จ เช็ค Firebase Rules")
+
+    # --- หน้าผู้ดูแล (Manager) ---
     else:
-        st.title("👨‍💼 สำหรับผู้ดูแล")
+        st.title("👨‍💼 ระบบติดตามรถขยะแบบ Real-time")
         data = get_all_trucks()
+        
         if data:
+            # สร้างแผนที่
             m = folium.Map(location=[14.882, 102.021], zoom_start=15)
+            colors = {"Truck_01": "green", "Truck_02": "blue", "Truck_03": "orange"}
+            
             for tid, info in data.items():
+                c = colors.get(tid, "red")
+                # วาดเส้นทาง (Path)
+                if 'path' in info:
+                    points = [[p['lat'], p['lon']] for p in info['path'].values()]
+                    folium.PolyLine(points, color=c, weight=4, opacity=0.6).add_to(m)
+                
+                # ปักหมุดตำแหน่งปัจจุบัน (Current)
                 if 'current' in info:
                     curr = info['current']
-                    folium.Marker([curr['lat'], curr['lon']], popup=tid).add_to(m)
-            st_folium(m, width="100%", height=500)
+                    folium.Marker(
+                        [curr['lat'], curr['lon']],
+                        popup=f"รถ: {tid}<br>เวลา: {curr['timestamp']}",
+                        icon=folium.Icon(color=c, icon='truck', prefix='fa')
+                    ).add_to(m)
+            
+            st_folium(m, width="100%", height=600)
+            
+            # ตารางข้อมูล
+            st.subheader("รายละเอียดรถแต่ละคัน")
+            st.json(data)
+        else:
+            st.info("ℹ️ ยังไม่มีข้อมูลการส่งพิกัดจากรถในขณะนี้")
