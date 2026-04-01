@@ -9,20 +9,17 @@ from streamlit_autorefresh import st_autorefresh
 # --- 1. ตั้งค่าหน้าเว็บ ---
 st.set_page_config(page_title="SUT Waste Tracker", page_icon="⚙️", layout="wide")
 
-# --- 2. ข้อมูลกุญแจ (Hardcoded พร้อมระบบแก้ Format อัตโนมัติ) ---
+# --- 2. ข้อมูลกุญแจ (เวอร์ชันบีบอัด ตัดปัญหา PEM File 100%) ---
 if not firebase_admin._apps:
     try:
-        # รหัสลับที่ได้จาก JSON
-        private_key = "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQDD9Uxn/t4Jd0qX\nZqRCzdX90PeF7KQfClHZtC4TXSmWnbFgnuV2bOzZ59A0vqirc9h1IQp550+IV0XN\nthGgNN+Sk6Qe76rFe5VEIuQGTfETKvyTbHiiAuiwen/C4kVK6eabLgAEqoL3FEfq\ncBjzAriFIL7RFKnrbp8b5DuBRe7Lk8X39fhM2NStlisdN90tJg+30cLWTTTS45LP\nUGCYt3ZDoSnRzYG4zoCmHHxtOJCrzl563p+RADIf7Ta9eMXrLjj+QJ5PSLf28MCv\nOlWMowjtTW1n4vQlKyuZvspvCx+SDjabpK0ySOLsU+YAAdIh330x5JnmTY2RLXvT\n1URrVFKBAgMBAAECggEAAzrUXYCxN9BZOLN8tLvsKXK/uKuuxRL0SEmAqqmp/0E2\nQKqfyzbWhM0uBKeJk8ldFYmj0MBt8ngnRrGn+tcyQeoIbgja3IZJ3pmRXvP7C6sF\nRpgGqTtxasK7Hzr/48ElD5TXk9wcXF6PhKMAO0WlxU51zLAJsK9mJJVbgHkGy4DK\scY9Ptf5qMogfGLJym733KHGuFihmRecbn0Gr3wtcQ7KsdJq6q/DcsfyG7sAh/pt\nlT3G/9p7Xv6dTALUoY4QoK/CYV+SRw52dfAKEwQBFuIhPEIvBgQefNBaScXUSMxy\nnv0yuWI0Wsaifn6dPFYC3PhV5l+jhFoxzUxXPRcu0QKBgQDrCHgPWxU6xGhXfmFs\ssJlZWd6Zg9wSLFrGX3O5tDzzB6cY6urHoBiJNpr2KD4MViw4nopn5KLMCUHeAkZ\no7MwPu8VynLLbeyKptvl5meIRGJ+PvT5oODBF3yrNPYSuupMtNJlaJADMYuFjoK+\nSZ/2gmp7sniSbsByt9aRsIXvsQKBgQDVcHaDkIdUWVu9Erzcd05mJaZDX42xaKBS\nq/t/otqh/aOGIWSZiWvBj/ZL9yQ4ZWBwCjaTF5qZNhWVZsr07kd9HKmTgf0B4QSu\VOsmTQeAY+ZjawLqXlZpwST94mkNOY6cSSDxMOgGLAonNTMgAKgc06kiG5cIUcou\nzuhloimT0QKBgHdY6pZpmwMnfxCGxXQL5fjVIFGgB9DtqOIIpMDupkZWbWjel+qh\n53Fu41cGPt8pN69CoeQG+sQhI3yCcKSLYs9p9cAr+FTisc3KYzl/4SzqBNW0pHMq\nRVbn1U+e6iGitp1S6M/D4/UrMH0WW7/C5S6pFOdRPjaldKYMQjHi4HBRAoGAUxBm\nfwMjN5djFW0SZPZlY2lpkDTCrvVZ13Ko+N5HGd3c4tliDkKl1fmRz7SJuwzxAAlp\fcsk1lVvBuqvN6z301/xOr/O2AlbSgEwVoKJ1dSLF8vQoac/F/8bx1ZyrbvlnTr0\ngAkZczV2ahXRJLY8tqNE4ko8d/dkqNzLIqp+ZdECgYAA0i+Y00oFtEe+dTitZ0jT\nCEp235MEqLOyGGGRaYRbYq4JA+tmjXpjK37N6yumBXcjfIOKb9wOpeTYIbNkMSJ1\ngdiwm9BEkTGronRuhJQqe07ldx3Axc9DgjpTbASvDW3NjdbEpdzvtwSHjubwARq7\nPWr+/eji/ZbFaAlAlbbt4Q==\n-----END PRIVATE KEY-----\n"
+        # บีบรหัสให้เป็นบรรทัดเดียวเพื่อป้องกัน Syntax Error
+        pk = "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQDD9Uxn/t4Jd0qX\nZqRCzdX90PeF7KQfClHZtC4TXSmWnbFgnuV2bOzZ59A0vqirc9h1IQp550+IV0XN\nthGgNN+Sk6Qe76rFe5VEIuQGTfETKvyTbHiiAuiwen/C4kVK6eabLgAEqoL3FEfq\ncBjzAriFIL7RFKnrbp8b5DuBRe7Lk8X39fhM2NStlisdN90tJg+30cLWTTTS45LP\nUGCYt3ZDoSnRzYG4zoCmHHxtOJCrzl563p+RADIf7Ta9eMXrLjj+QJ5PSLf28MCv\nOlWMowjtTW1n4vQlKyuZvspvCx+SDjabpK0ySOLsU+YAAdIh330x5JnmTY2RLXvT\n1URrVFKBAgMBAAECggEAAzrUXYCxN9BZOLN8tLvsKXK/uKuuxRL0SEmAqqmp/0E2\nQKqfyzbWhM0uBKeJk8ldFYmj0MBt8ngnRrGn+tcyQeoIbgja3IZJ3pmRXvP7C6sF\nRpgGqTtxasK7Hzr/48ElD5TXk9wcXF6PhKMAO0WlxU51zLAJsK9mJJVbgHkGy4DK\scY9Ptf5qMogfGLJym733KHGuFihmRecbn0Gr3wtcQ7KsdJq6q/DcsfyG7sAh/pt\nlT3G/9p7Xv6dTALUoY4QoK/CYV+SRw52dfAKEwQBFuIhPEIvBgQefNBaScXUSMxy\nnv0yuWI0Wsaifn6dPFYC3PhV5l+jhFoxzUxXPRcu0QKBgQDrCHgPWxU6xGhXfmFs\ssJlZWd6Zg9wSLFrGX3O5tDzzB6cY6urHoBiJNpr2KD4MViw4nopn5KLMCUHeAkZ\no7MwPu8VynLLbeyKptvl5meIRGJ+PvT5oODBF3yrNPYSuupMtNJlaJADMYuFjoK+\nSZ/2gmp7sniSbsByt9aRsIXvsQKBgQDVcHaDkIdUWVu9Erzcd05mJaZDX42xaKBS\nq/t/otqh/aOGIWSZiWvBj/ZL9yQ4ZWBwCjaTF5qZNhWVZsr07kd9HKmTgf0B4QSu\VOsmTQeAY+ZjawLqXlZpwST94mkNOY6cSSDxMOgGLAonNTMgAKgc06kiG5cIUcou\nzuhloimT0QKBgHdY6pZpmwMnfxCGxXQL5fjVIFGgB9DtqOIIpMDupkZWbWjel+qh\n53Fu41cGPt8pN69CoeQG+sQhI3yCcKSLYs9p9cAr+FTisc3KYzl/4SzqBNW0pHMq\nRVbn1U+e6iGitp1S6M/D4/UrMH0WW7/C5S6pFOdRPjaldKYMQjHi4HBRAoGAUxBm\nfwMjN5djFW0SZPZlY2lpkDTCrvVZ13Ko+N5HGd3c4tliDkKl1fmRz7SJuwzxAAlp\fcsk1lVvBuqvN6z301/xOr/O2AlbSgEwVoKJ1dSLF8vQoac/F/8bx1ZyrbvlnTr0\ngAkZczV2ahXRJLY8tqNE4ko8d/dkqNzLIqp+ZdECgYAA0i+Y00oFtEe+dTitZ0jT\nCEp235MEqLOyGGGRaYRbYq4JA+tmjXpjK37N6yumBXcjfIOKb9wOpeTYIbNkMSJ1\ngdiwm9BEkTGronRuhJQqe07ldx3Axc9DgjpTbASvDW3NjdbEpdzvtwSHjubwARq7\nPWr+/eji/ZbFaAlAlbbt4Q==\n-----END PRIVATE KEY-----\n"
         
-        # แก้ฟอร์แมตเรื่องการขึ้นบรรทัดใหม่ให้ Firebase อ่านออก
-        formatted_key = private_key.replace("\\n", "\n")
-
         firebase_info = {
             "type": "service_account",
             "project_id": "sut-waste-tracker",
             "private_key_id": "e341cf18cbe505be7ab63031d8a198dc8d5568ad",
-            "private_key": formatted_key,
+            "private_key": pk.replace("\\n", "\n"),
             "client_email": "firebase-adminsdk-fbsvc@sut-waste-tracker.iam.gserviceaccount.com",
             "client_id": "107808354896124963616",
             "auth_uri": "https://accounts.google.com/o/oauth2/auth",
@@ -38,7 +35,7 @@ if not firebase_admin._apps:
     except Exception as e:
         st.error(f"❌ Firebase Connection Error: {e}")
 
-# --- 3. ฟังก์ชันจัดการข้อมูล ---
+# --- 3. ส่วนการทำงานที่เหลือ ---
 def update_location(truck_id, lat, lon):
     try:
         ref = db.reference(f'trucks/{truck_id}/current')
@@ -81,7 +78,6 @@ else:
         if st.button("📍 ส่งตำแหน่งปัจจุบัน"):
             if update_location(truck, lat, lon): st.success("ส่งตำแหน่งสำเร็จ!")
             else: st.error("ส่งไม่สำเร็จ กรุณาเช็ค Rules ใน Firebase")
-
     else:
         st.title("👨‍💼 ระบบติดตามรถขยะ (Manager)")
         data = get_all_trucks()
@@ -95,8 +91,7 @@ else:
                     folium.PolyLine(pts, color=c, weight=4).add_to(m)
                 if 'current' in info:
                     curr = info['current']
-                    folium.Marker([curr['lat'], curr['lon']], 
-                                  popup=f"{tid} ({curr['timestamp']})",
+                    folium.Marker([curr['lat'], curr['lon']], popup=tid,
                                   icon=folium.Icon(color=c, icon='truck', prefix='fa')).add_to(m)
             st_folium(m, width="100%", height=500)
-        else: st.info("ยังไม่มีข้อมูลรถในขณะนี้")
+        else: st.info("ยังไม่มีข้อมูลรถ")
